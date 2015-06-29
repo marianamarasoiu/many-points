@@ -1,0 +1,9 @@
+name: many_points
+version: 0.0.1
+description: A command-line library for visualising data matrices.
+environment:
+  sdk: '>=1.0.0 <2.0.0'
+dependencies:
+  image: '>=1.1.0 <1.2.0'
+dev_dependencies:
+  test: '>=0.12.0 <0.13.0'
