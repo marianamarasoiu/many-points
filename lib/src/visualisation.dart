@@ -92,6 +92,29 @@ class Visualisation {
     });
   }
 
+  void render_SCALING_HACK(num width, num height) {
+    _applyTransforms();
+
+    int w = (xRange.max - xRange.min).ceil() + 1;
+    int h = (yRange.max - yRange.min).ceil() + 1;
+    Image image = new Image(width, height);
+
+    for (int i = 0; i < xs.length; i++) {
+      image.setPixel(
+          (((xs[i] - xRange.min) / w) * width).floor(),
+          (((ys[i] - yRange.min) / h) * height).floor(), colors[i]);
+    }
+
+//    if (width != -1) {
+//      image = copyResize(image, width, height, NEAREST);
+//    }
+    new io.File(_imagePrefix + new DateTime.now().toString() + '.png')
+    .create(recursive: true)
+    .then((io.File file) {
+      file.writeAsBytesSync(encodePng(image));
+    });
+  }
+
   /// Applies the transforms to the stored data points.
   /// It modifies the data point values, so no more data should be added after
   /// calling this method.
