@@ -12,6 +12,7 @@ class Visualisation {
   Range xRange;
   Range yRange;
   Range valueRange;
+  bool transformsApplied;
 
   Visualisation() {
     xRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
@@ -46,7 +47,7 @@ class Visualisation {
     Iterator x = ix.iterator;
     Iterator y = iy.iterator;
     Iterator value = ivalue.iterator;
-    while(x.moveNext() && y.moveNext() && value.moveNext()) {
+    while (x.moveNext() && y.moveNext() && value.moveNext()) {
       addData(x.current, y.current, value.current);
     }
   }
@@ -100,8 +101,7 @@ class Visualisation {
     Image image = new Image(width, height);
 
     for (int i = 0; i < xs.length; i++) {
-      image.setPixel(
-          (((xs[i] - xRange.min) / w) * width).floor(),
+      image.setPixel((((xs[i] - xRange.min) / w) * width).floor(),
           (((ys[i] - yRange.min) / h) * height).floor(), colors[i]);
     }
 
@@ -109,8 +109,33 @@ class Visualisation {
 //      image = copyResize(image, width, height, NEAREST);
 //    }
     new io.File(_imagePrefix + new DateTime.now().toString() + '.png')
-    .create(recursive: true)
-    .then((io.File file) {
+        .create(recursive: true)
+        .then((io.File file) {
+      file.writeAsBytesSync(encodePng(image));
+    });
+  }
+
+  /// Writes only the selected range of the visualisation to file. No scaling.
+  void renderAreaSync(Range areaX, Range areaY) {
+    assert(areaX != null);
+    assert(areaY != null);
+    _applyTransforms();
+
+    int w = (areaX.max - areaX.min).ceil() + 1;
+    int h = (areaY.max - areaY.min).ceil() + 1;
+    Image image = new Image(w, h);
+
+    for (int i = 0; i < xs.length; i++) {
+      if (areaX.min <= xs[i] && xs[i] <= areaY.max &&
+          areaY.min <= ys[i] && ys[i] <= areaY.max) {
+        image.setPixel(xs[i], ys[i], colors[i]);
+      }
+    }
+
+    new io.File(_imagePrefix +
+        new DateTime.now().toString() +
+        '_${areaX.min},${areaX.max}_${areaY.min},${areaY.max}' +
+        '.png').create(recursive: true).then((io.File file) {
       file.writeAsBytesSync(encodePng(image));
     });
   }
@@ -120,6 +145,11 @@ class Visualisation {
   /// calling this method.
   /// TODO(mariana): Enforce this (e.g. add a flag on the class that fails the add calls).
   void _applyTransforms() {
+    // Apply the transforms only once. This allows for multiple render calls but
+    // a single transforms application phase.
+    if (transformsApplied == false)
+      return;
+    transformsApplied = true;
     // Go through data transforms first and apply them to every point.
     for (DataTransformFunction transform in _dataTransforms) {
       List<num> newXs = [];
