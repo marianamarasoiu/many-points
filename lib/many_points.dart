@@ -10,6 +10,7 @@ part 'src/visualisation.dart';
 part 'src/range.dart';
 
 /// Returns [num x, num y, num value]
+/// TODO(mariana): Explore using a const class instead of a List.
 typedef List DataTransformFunction(
     int x, int y, num value, Range xRange, Range yRange, Range dataRange);
 

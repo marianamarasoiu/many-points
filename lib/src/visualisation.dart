@@ -1,7 +1,7 @@
 part of many_points;
 
 class Visualisation {
-  String _imagePrefix = 'output/image/';
+  final String _imagePrefix = 'output/image/';
 
   List<DataTransformFunction> _dataTransforms = [];
   ColorTransformFunction _colorTransform;
@@ -21,6 +21,9 @@ class Visualisation {
 
   /// Add a data point defined by the [x] and [y] coordinates and its [value].
   void addData(num x, num y, num value) {
+    assert(x != null);
+    assert(y != null);
+    assert(value != null);
     xs.add(x);
     ys.add(y);
     values.add(value);
@@ -40,22 +43,11 @@ class Visualisation {
   /// the value list [ivalue].
   void addAllDataPoints(
       Iterable<num> ix, Iterable<num> iy, Iterable<num> ivalue) {
-    xs.addAll(ix);
-    ys.addAll(iy);
-    values.addAll(ivalue);
-
-    // Adjust the ranges for the data.
-    for (num x in ix) {
-      xRange.min = math.min(xRange.min, x);
-      xRange.max = math.max(xRange.max, x);
-    }
-    for (num y in iy) {
-      yRange.min = math.min(yRange.min, y);
-      yRange.max = math.max(yRange.max, y);
-    }
-    for (num value in ivalue) {
-      valueRange.min = math.min(valueRange.min, value);
-      valueRange.max = math.max(valueRange.max, value);
+    Iterator x = ix.iterator;
+    Iterator y = iy.iterator;
+    Iterator value = ivalue.iterator;
+    while(x.moveNext() && y.moveNext() && value.moveNext()) {
+      addData(x.current, y.current, value.current);
     }
   }
 
@@ -79,7 +71,7 @@ class Visualisation {
   /// If [width] is -1, then there is no scaling.
   /// If [width] is > 0 and [height] is -1, then the scaling will be determined
   /// by the aspect ratio of the visualisation and [width].
-  void render(num width, [num height = -1]) {
+  void renderSync([num width = -1, num height = -1]) {
     _applyTransforms();
 
     int w = (xRange.max - xRange.min).ceil() + 1;
@@ -103,6 +95,7 @@ class Visualisation {
   /// Applies the transforms to the stored data points.
   /// It modifies the data point values, so no more data should be added after
   /// calling this method.
+  /// TODO(mariana): Enforce this (e.g. add a flag on the class that fails the add calls).
   void _applyTransforms() {
     // Go through data transforms first and apply them to every point.
     for (DataTransformFunction transform in _dataTransforms) {

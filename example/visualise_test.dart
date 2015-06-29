@@ -1,6 +1,6 @@
 library many_points.test;
 
-import 'package:many_points/many_points.dart';
+import '../lib/many_points.dart';
 
 void main() {
   Visualisation chart = new Visualisation();
@@ -16,5 +16,5 @@ void main() {
   };
 
   chart.setColorTransform(fn);
-  chart.render(21, 21);
+  chart.renderSync(21, 21);
 }
