@@ -1,7 +1,7 @@
 part of many_points;
 
 class Visualisation {
-  final String _imagePrefix = 'output/image/';
+  String _outputFolder, _outputFilename;
 
   List<DataTransformFunction> _dataTransforms = [];
   ColorTransformFunction _colorTransform;
@@ -12,11 +12,14 @@ class Visualisation {
   Range xRange;
   Range yRange;
   Range valueRange;
+  bool transformsApplied;
 
-  Visualisation() {
+  Visualisation([String outputFolder = "output/image/", String outputFilename]) {
     xRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
     yRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
     valueRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
+    _outputFolder = outputFolder;
+    _outputFilename = outputFilename;
   }
 
   /// Add a data point defined by the [x] and [y] coordinates and its [value].
@@ -46,7 +49,7 @@ class Visualisation {
     Iterator x = ix.iterator;
     Iterator y = iy.iterator;
     Iterator value = ivalue.iterator;
-    while(x.moveNext() && y.moveNext() && value.moveNext()) {
+    while (x.moveNext() && y.moveNext() && value.moveNext()) {
       addData(x.current, y.current, value.current);
     }
   }
@@ -85,9 +88,13 @@ class Visualisation {
     if (width != -1) {
       image = copyResize(image, width, height, NEAREST);
     }
-    new io.File(_imagePrefix + new DateTime.now().toString() + '.png')
-        .create(recursive: true)
-        .then((io.File file) {
+    String filename = _outputFolder;
+    if (_outputFilename == null) {
+      filename = filename + new DateTime.now().toString() + '.png';
+    } else {
+      filename = filename + _outputFilename;
+    }
+    new io.File(filename).create(recursive: true).then((io.File file) {
       file.writeAsBytesSync(encodePng(image));
     });
   }
@@ -100,17 +107,51 @@ class Visualisation {
     Image image = new Image(width, height);
 
     for (int i = 0; i < xs.length; i++) {
-      image.setPixel(
-          (((xs[i] - xRange.min) / w) * width).floor(),
+      image.setPixel((((xs[i] - xRange.min) / w) * width).floor(),
           (((ys[i] - yRange.min) / h) * height).floor(), colors[i]);
     }
 
 //    if (width != -1) {
 //      image = copyResize(image, width, height, NEAREST);
 //    }
-    new io.File(_imagePrefix + new DateTime.now().toString() + '.png')
-    .create(recursive: true)
-    .then((io.File file) {
+    String filename = _outputFolder;
+    if (_outputFilename == null) {
+      filename = filename + new DateTime.now().toString() + '.png';
+    } else {
+      filename = filename + _outputFilename;
+    }
+    new io.File(filename).create(recursive: true).then((io.File file) {
+      file.writeAsBytesSync(encodePng(image));
+    });
+  }
+
+  /// Writes only the selected range of the visualisation to file. No scaling.
+  void renderAreaSync(Range areaX, Range areaY) {
+    assert(areaX != null);
+    assert(areaY != null);
+    _applyTransforms();
+
+    int w = (areaX.max - areaX.min).ceil() + 1;
+    int h = (areaY.max - areaY.min).ceil() + 1;
+    Image image = new Image(w, h);
+
+    for (int i = 0; i < xs.length; i++) {
+      if (areaX.min <= xs[i] && xs[i] <= areaY.max &&
+          areaY.min <= ys[i] && ys[i] <= areaY.max) {
+        image.setPixel(xs[i], ys[i], colors[i]);
+      }
+    }
+
+    String filename = _outputFolder;
+    if (_outputFilename == null) {
+      filename = filename +
+          new DateTime.now().toString() +
+          '_${areaX.min},${areaX.max}_${areaY.min},${areaY.max}' +
+          '.png';
+    } else {
+      filename = filename + _outputFilename;
+    }
+    new io.File(filename).create(recursive: true).then((io.File file) {
       file.writeAsBytesSync(encodePng(image));
     });
   }
@@ -120,6 +161,10 @@ class Visualisation {
   /// calling this method.
   /// TODO(mariana): Enforce this (e.g. add a flag on the class that fails the add calls).
   void _applyTransforms() {
+    // Apply the transforms only once. This allows for multiple render calls but
+    // a single transforms application phase.
+    if (transformsApplied == false) return;
+    transformsApplied = true;
     // Go through data transforms first and apply them to every point.
     for (DataTransformFunction transform in _dataTransforms) {
       List<num> newXs = [];
