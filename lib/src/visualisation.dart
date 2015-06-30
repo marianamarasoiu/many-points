@@ -1,7 +1,7 @@
 part of many_points;
 
 class Visualisation {
-  final String _imagePrefix = 'output/image/';
+  String _outputFolder, _outputFilename;
 
   List<DataTransformFunction> _dataTransforms = [];
   ColorTransformFunction _colorTransform;
@@ -14,10 +14,12 @@ class Visualisation {
   Range valueRange;
   bool transformsApplied;
 
-  Visualisation() {
+  Visualisation([String outputFolder = "output/image/", String outputFilename]) {
     xRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
     yRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
     valueRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
+    _outputFolder = outputFolder;
+    _outputFilename = outputFilename;
   }
 
   /// Add a data point defined by the [x] and [y] coordinates and its [value].
@@ -86,9 +88,13 @@ class Visualisation {
     if (width != -1) {
       image = copyResize(image, width, height, NEAREST);
     }
-    new io.File(_imagePrefix + new DateTime.now().toString() + '.png')
-        .create(recursive: true)
-        .then((io.File file) {
+    String filename = _outputFolder;
+    if (_outputFilename == null) {
+      filename = filename + new DateTime.now().toString() + '.png';
+    } else {
+      filename = filename + _outputFilename;
+    }
+    new io.File(filename).create(recursive: true).then((io.File file) {
       file.writeAsBytesSync(encodePng(image));
     });
   }
@@ -108,9 +114,13 @@ class Visualisation {
 //    if (width != -1) {
 //      image = copyResize(image, width, height, NEAREST);
 //    }
-    new io.File(_imagePrefix + new DateTime.now().toString() + '.png')
-        .create(recursive: true)
-        .then((io.File file) {
+    String filename = _outputFolder;
+    if (_outputFilename == null) {
+      filename = filename + new DateTime.now().toString() + '.png';
+    } else {
+      filename = filename + _outputFilename;
+    }
+    new io.File(filename).create(recursive: true).then((io.File file) {
       file.writeAsBytesSync(encodePng(image));
     });
   }
@@ -132,10 +142,16 @@ class Visualisation {
       }
     }
 
-    new io.File(_imagePrefix +
-        new DateTime.now().toString() +
-        '_${areaX.min},${areaX.max}_${areaY.min},${areaY.max}' +
-        '.png').create(recursive: true).then((io.File file) {
+    String filename = _outputFolder;
+    if (_outputFilename == null) {
+      filename = filename +
+          new DateTime.now().toString() +
+          '_${areaX.min},${areaX.max}_${areaY.min},${areaY.max}' +
+          '.png';
+    } else {
+      filename = filename + _outputFilename;
+    }
+    new io.File(filename).create(recursive: true).then((io.File file) {
       file.writeAsBytesSync(encodePng(image));
     });
   }
@@ -147,8 +163,7 @@ class Visualisation {
   void _applyTransforms() {
     // Apply the transforms only once. This allows for multiple render calls but
     // a single transforms application phase.
-    if (transformsApplied == false)
-      return;
+    if (transformsApplied == false) return;
     transformsApplied = true;
     // Go through data transforms first and apply them to every point.
     for (DataTransformFunction transform in _dataTransforms) {
