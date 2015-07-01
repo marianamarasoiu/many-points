@@ -88,15 +88,9 @@ class Visualisation {
     if (width != -1) {
       image = copyResize(image, width, height, NEAREST);
     }
-    String filename = _outputFolder;
-    if (_outputFilename == null) {
-      filename = filename + new DateTime.now().toString() + '.png';
-    } else {
-      filename = filename + _outputFilename;
-    }
-    new io.File(filename).create(recursive: true).then((io.File file) {
-      file.writeAsBytesSync(encodePng(image));
-    });
+
+    String filePath = _computeFilePath("${new DateTime.now()}.png");
+    _writeImageSync(filePath, image);
   }
 
   void render_SCALING_HACK(num width, num height) {
@@ -114,15 +108,9 @@ class Visualisation {
 //    if (width != -1) {
 //      image = copyResize(image, width, height, NEAREST);
 //    }
-    String filename = _outputFolder;
-    if (_outputFilename == null) {
-      filename = filename + new DateTime.now().toString() + '.png';
-    } else {
-      filename = filename + _outputFilename;
-    }
-    new io.File(filename).create(recursive: true).then((io.File file) {
-      file.writeAsBytesSync(encodePng(image));
-    });
+
+    String filePath = _computeFilePath("${new DateTime.now()}.png");
+    _writeImageSync(filePath, image);
   }
 
   /// Writes only the selected range of the visualisation to file. No scaling.
@@ -142,18 +130,27 @@ class Visualisation {
       }
     }
 
-    String filename = _outputFolder;
+    String autoFileName = "${new DateTime.now()}"
+      "_${areaX.min},${areaX.max}_${areaY.min},${areaY.max}.png";
+    String filePath = _computeFilePath(autoFileName);
+   _writeImageSync(filePath, image);
+  }
+
+  void _writeImageSync(String filePath, Image image) {
+    var file = new io.File(filePath)..createSync(recursive: true);
+    file.writeAsBytesSync(encodePng(image));
+  }
+
+  /// Compute a file path, using the supplied automatic name unless it is
+  /// overridden
+  String _computeFilePath(String autoFileName) {
+    String filePath = _outputFolder;
     if (_outputFilename == null) {
-      filename = filename +
-          new DateTime.now().toString() +
-          '_${areaX.min},${areaX.max}_${areaY.min},${areaY.max}' +
-          '.png';
+      filePath = filePath + autoFileName;
     } else {
-      filename = filename + _outputFilename;
+      filePath = filePath + _outputFilename;
     }
-    new io.File(filename).create(recursive: true).then((io.File file) {
-      file.writeAsBytesSync(encodePng(image));
-    });
+    return filePath;
   }
 
   /// Applies the transforms to the stored data points.
