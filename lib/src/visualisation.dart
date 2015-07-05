@@ -2,7 +2,6 @@ part of many_points;
 
 class Visualisation {
   String _outputFolder, _outputFilename;
-
   List<DataTransformFunction> _dataTransforms = [];
   ColorTransformFunction _colorTransform;
   List<int> xs = [];
@@ -13,13 +12,23 @@ class Visualisation {
   Range yRange;
   Range valueRange;
   bool transformsApplied;
+  Logger logger;
 
-  Visualisation([String outputFolder = "output/image/", String outputFilename]) {
+  Visualisation([String outputFolder = "output/image/", String outputFilename,
+      bool enableLogging = true]) {
     xRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
     yRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
     valueRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
     _outputFolder = outputFolder;
     _outputFilename = outputFilename;
+
+    // Initialize logging
+    logger = new Logger('Visualisation');
+    hierarchicalLoggingEnabled = true;
+    logger.level = enableLogging ? Level.ALL : Level.OFF;
+    logger.onRecord.listen((LogRecord rec) {
+      print('${rec.level.name}: ${rec.time}: ${rec.message}');
+    });
   }
 
   /// Add a data point defined by the [x] and [y] coordinates and its [value].
@@ -75,7 +84,10 @@ class Visualisation {
   /// If [width] is > 0 and [height] is -1, then the scaling will be determined
   /// by the aspect ratio of the visualisation and [width].
   void renderSync([num width = -1, num height = -1]) {
+    Stopwatch sw = new Stopwatch()..start();
     _applyTransforms();
+    logger.info('Transforms applied. Duration/ms: ${sw.elapsedMilliseconds}');
+    sw.reset();
 
     int w = (xRange.max - xRange.min).ceil() + 1;
     int h = (yRange.max - yRange.min).ceil() + 1;
@@ -84,17 +96,26 @@ class Visualisation {
     for (int i = 0; i < xs.length; i++) {
       image.setPixel(xs[i], ys[i], colors[i]);
     }
+    logger.info('Pixel values set. Duration/ms: ${sw.elapsedMilliseconds}');
+    sw.reset();
 
     if (width != -1) {
       image = copyResize(image, width, height, NEAREST);
+      logger.info('Image resized. Duration/ms: ${sw.elapsedMilliseconds}');
+      sw.reset();
     }
 
     String filePath = _computeFilePath("${new DateTime.now()}.png");
     _writeImageSync(filePath, image);
+    logger
+        .info('Image written to file. Duration/ms: ${sw.elapsedMilliseconds}');
   }
 
   void render_SCALING_HACK(num width, num height) {
+    Stopwatch sw = new Stopwatch()..start();
     _applyTransforms();
+    logger.info('Transforms applied. Duration/ms: ${sw.elapsedMilliseconds}');
+    sw.reset();
 
     int w = (xRange.max - xRange.min).ceil() + 1;
     int h = (yRange.max - yRange.min).ceil() + 1;
@@ -104,6 +125,8 @@ class Visualisation {
       image.setPixel((((xs[i] - xRange.min) / w) * width).floor(),
           (((ys[i] - yRange.min) / h) * height).floor(), colors[i]);
     }
+    logger.info('Pixel values set. Duration/ms: ${sw.elapsedMilliseconds}');
+    sw.reset();
 
 //    if (width != -1) {
 //      image = copyResize(image, width, height, NEAREST);
@@ -111,29 +134,39 @@ class Visualisation {
 
     String filePath = _computeFilePath("${new DateTime.now()}.png");
     _writeImageSync(filePath, image);
+    logger
+        .info('Image written to file. Duration/ms: ${sw.elapsedMilliseconds}');
   }
 
   /// Writes only the selected range of the visualisation to file. No scaling.
   void renderAreaSync(Range areaX, Range areaY) {
     assert(areaX != null);
     assert(areaY != null);
+    Stopwatch sw = new Stopwatch()..start();
     _applyTransforms();
+    logger.info('Transforms applied. Duration/ms: ${sw.elapsedMilliseconds}');
+    sw.reset();
 
     int w = (areaX.max - areaX.min).ceil() + 1;
     int h = (areaY.max - areaY.min).ceil() + 1;
     Image image = new Image(w, h);
-
     for (int i = 0; i < xs.length; i++) {
-      if (areaX.min <= xs[i] && xs[i] <= areaY.max &&
-          areaY.min <= ys[i] && ys[i] <= areaY.max) {
+      if (areaX.min <= xs[i] &&
+          xs[i] <= areaY.max &&
+          areaY.min <= ys[i] &&
+          ys[i] <= areaY.max) {
         image.setPixel(xs[i], ys[i], colors[i]);
       }
     }
+    logger.info('Pixel values set. Duration/ms: ${sw.elapsedMilliseconds}');
+    sw.reset();
 
     String autoFileName = "${new DateTime.now()}"
-      "_${areaX.min},${areaX.max}_${areaY.min},${areaY.max}.png";
+        "_${areaX.min},${areaX.max}_${areaY.min},${areaY.max}.png";
     String filePath = _computeFilePath(autoFileName);
-   _writeImageSync(filePath, image);
+    _writeImageSync(filePath, image);
+    logger
+        .info('Image written to file. Duration/ms: ${sw.elapsedMilliseconds}');
   }
 
   void _writeImageSync(String filePath, Image image) {
