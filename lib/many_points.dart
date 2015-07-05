@@ -4,6 +4,7 @@ library many_points;
 import 'package:image/image.dart';
 import 'dart:math' as math;
 import 'dart:io' as io;
+import 'package:logging/logging.dart';
 
 export 'package:image/image.dart' show Color;
 part 'src/visualisation.dart';
