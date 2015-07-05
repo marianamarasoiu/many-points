@@ -15,7 +15,7 @@ class Visualisation {
   Logger logger;
 
   Visualisation([String outputFolder = "output/image/", String outputFilename,
-      bool logging = true]) {
+      bool enableLogging = true]) {
     xRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
     yRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
     valueRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
@@ -25,7 +25,7 @@ class Visualisation {
     // Initialize logging
     logger = new Logger('Visualisation');
     hierarchicalLoggingEnabled = true;
-    logger.level = logging ? Level.ALL : Level.OFF;
+    logger.level = enableLogging ? Level.ALL : Level.OFF;
     logger.onRecord.listen((LogRecord rec) {
       print('${rec.level.name}: ${rec.time}: ${rec.message}');
     });
