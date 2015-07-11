@@ -15,37 +15,48 @@ _initLogging(bool enableLogging) {
 }
 
 class Visualisation {
-  String _outputFolder, _outputFilename;
+  /// The output folder path for the resulting PNG image.
+  String imageOutputFolder = "output/image/";
+
+  /// The output PNG image name.
+  String imageOutputFileName;
+
+  /// The output folder path for the resulting data dump in JSON format.
+  String dataOutputFolder = "output/data/";
+
+  /// The output JSON data file name.
+  String dataOutputFileName;
+
   List<DataTransformFunction> _dataTransforms = [];
   ColorTransformFunction _colorTransform;
-  List<int> _xs = [];
-  List<int> _ys = [];
+  List<int> _xList = [];
+  List<int> _yList = [];
+  List<num> _valueList = [];
   List<Map> _dataList = [];
-  List<int> _colors = [];
+  List<int> _colorList = [];
   Range _xRange;
   Range _yRange;
   Range _valueRange;
   bool _transformsApplied = false;
 
-  Visualisation([String outputFolder = "output/image/", String outputFilename,
-      bool enableLogging = true]) {
+  Visualisation([bool enableLogging = true]) {
     _xRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
     _yRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
     _valueRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
-    _outputFolder = outputFolder;
-    _outputFilename = outputFilename;
     _initLogging(enableLogging);
   }
 
-  /// Add a data point defined by the [x] and [y] coordinates and its [data].
-  /// The [data] map must contain a 'value' entry.
-  void addData(num x, num y, Map data) {
+  /// Add a data point defined by the [x] and [y] coordinates and its [value].
+  /// [data] is a Map used to store other information about the point.
+  void addData(int x, int y, num value, Map data) {
     assert(x != null);
     assert(y != null);
+    assert(value != null);
     assert(data != null);
-    assert(data['value'] != null);
-    _xs.add(x);
-    _ys.add(y);
+
+    _xList.add(x);
+    _yList.add(y);
+    _valueList.add(value);
     _dataList.add(data);
 
     // Adjust the ranges for the data.
@@ -55,19 +66,20 @@ class Visualisation {
     _yRange.min = math.min(_yRange.min, y);
     _yRange.max = math.max(_yRange.max, y);
 
-    _valueRange.min = math.min(_valueRange.min, data['value']);
-    _valueRange.max = math.max(_valueRange.max, data['value']);
+    _valueRange.min = math.min(_valueRange.min, value);
+    _valueRange.max = math.max(_valueRange.max, value);
   }
 
-  /// Appends the data points defined by the coordinate lists [ix] and [iy] and
-  /// the value list [ivalue].
-  void addAllDataPoints(
-      Iterable<num> ix, Iterable<num> iy, Iterable<Map> idataList) {
-    Iterator x = ix.iterator;
-    Iterator y = iy.iterator;
-    Iterator data = idataList.iterator;
+  /// Appends the data points defined by the coordinate lists [xIterable] and
+  /// [yIterable] and the data lists [valueIterable] and [dataList].
+  void addAllDataPoints(Iterable<int> xIterable, Iterable<int> yIterable,
+      Iterable<num> valueIterable, Iterable<Map> dataIterable) {
+    Iterator x = xIterable.iterator;
+    Iterator y = yIterable.iterator;
+    Iterator value = valueIterable.iterator;
+    Iterator data = dataIterable.iterator;
     while (x.moveNext() && y.moveNext() && data.moveNext()) {
-      addData(x.current, y.current, data.current);
+      addData(x.current, y.current, value.current, data.current);
     }
   }
 
@@ -101,8 +113,8 @@ class Visualisation {
     int h = (_yRange.max - _yRange.min).ceil() + 1;
     Image image = new Image(w, h);
 
-    for (int i = 0; i < _xs.length; i++) {
-      image.setPixel(_xs[i], _ys[i], _colors[i]);
+    for (int i = 0; i < _xList.length; i++) {
+      image.setPixel(_xList[i], _yList[i], _colorList[i]);
     }
     _logger.info('Pixel values set. Duration/ms: ${sw.elapsedMilliseconds}');
     sw.reset();
@@ -113,10 +125,19 @@ class Visualisation {
       sw.reset();
     }
 
-    String filePath = _computeFilePath("${new DateTime.now()}.png");
-    _writeImageSync(filePath, image);
+    // Writing the image.
+    String imageFilePath = _computeFilePath("${new DateTime.now()}.png", false);
+    _writeImageSync(imageFilePath, image);
     _logger
         .info('Image written to file. Duration/ms: ${sw.elapsedMilliseconds}');
+    sw.reset();
+
+    // Writing the data dump.
+    String dataFilePath = _computeFilePath("${new DateTime.now()}.json", true);
+    List data = _buildDataPointList();
+    _writeDataSync(dataFilePath, data);
+    _logger
+        .info('Data written to file. Duration/ms: ${sw.elapsedMilliseconds}');
   }
 
   void render_SCALING_HACK(num width, num height) {
@@ -129,9 +150,9 @@ class Visualisation {
     int h = (_yRange.max - _yRange.min).ceil() + 1;
     Image image = new Image(width, height);
 
-    for (int i = 0; i < _xs.length; i++) {
-      image.setPixel((((_xs[i] - _xRange.min) / w) * width).floor(),
-          (((_ys[i] - _yRange.min) / h) * height).floor(), _colors[i]);
+    for (int i = 0; i < _xList.length; i++) {
+      image.setPixel((((_xList[i] - _xRange.min) / w) * width).floor(),
+          (((_yList[i] - _yRange.min) / h) * height).floor(), _colorList[i]);
     }
     _logger.info('Pixel values set. Duration/ms: ${sw.elapsedMilliseconds}');
     sw.reset();
@@ -140,10 +161,19 @@ class Visualisation {
 //      image = copyResize(image, width, height, NEAREST);
 //    }
 
-    String filePath = _computeFilePath("${new DateTime.now()}.png");
-    _writeImageSync(filePath, image);
+    // Writing the image.
+    String imageFilePath = _computeFilePath("${new DateTime.now()}.png", false);
+    _writeImageSync(imageFilePath, image);
     _logger
         .info('Image written to file. Duration/ms: ${sw.elapsedMilliseconds}');
+    sw.reset();
+
+    // Writing the data dump.
+    String dataFilePath = _computeFilePath("${new DateTime.now()}.json", true);
+    List data = _buildDataPointList();
+    _writeDataSync(dataFilePath, data);
+    _logger
+        .info('Data written to file. Duration/ms: ${sw.elapsedMilliseconds}');
   }
 
   /// Writes only the selected range of the visualisation to file. No scaling.
@@ -158,23 +188,35 @@ class Visualisation {
     int w = (areaX.max - areaX.min).ceil() + 1;
     int h = (areaY.max - areaY.min).ceil() + 1;
     Image image = new Image(w, h);
-    for (int i = 0; i < _xs.length; i++) {
-      if (areaX.min <= _xs[i] &&
-          _xs[i] <= areaY.max &&
-          areaY.min <= _ys[i] &&
-          _ys[i] <= areaY.max) {
-        image.setPixel(_xs[i], _ys[i], _colors[i]);
+    for (int i = 0; i < _xList.length; i++) {
+      if (areaX.min <= _xList[i] &&
+          _xList[i] <= areaY.max &&
+          areaY.min <= _yList[i] &&
+          _yList[i] <= areaY.max) {
+        image.setPixel(_xList[i], _yList[i], _colorList[i]);
       }
     }
     _logger.info('Pixel values set. Duration/ms: ${sw.elapsedMilliseconds}');
     sw.reset();
 
     String autoFileName = "${new DateTime.now()}"
-        "_${areaX.min},${areaX.max}_${areaY.min},${areaY.max}.png";
-    String filePath = _computeFilePath(autoFileName);
-    _writeImageSync(filePath, image);
+        "_${areaX.min},${areaX.max}_${areaY.min},${areaY.max}";
+
+    // Writing the image.
+    String imageFileName = autoFileName + '.png';
+    String imageFilePath = _computeFilePath(imageFileName, false);
+    _writeImageSync(imageFilePath, image);
     _logger
         .info('Image written to file. Duration/ms: ${sw.elapsedMilliseconds}');
+    sw.reset();
+
+    // Writing the data dump.
+    String dataFileName = autoFileName + '.json';
+    String dataFilePath = _computeFilePath(dataFileName, true);
+    List data = _buildDataPointList();
+    _writeDataSync(dataFilePath, data);
+    _logger
+        .info('Data written to file. Duration/ms: ${sw.elapsedMilliseconds}');
   }
 
   void _writeImageSync(String filePath, Image image) {
@@ -182,14 +224,35 @@ class Visualisation {
     file.writeAsBytesSync(encodePng(image));
   }
 
+  void _writeDataSync(String filePath, List data) {
+    var file = new io.File(filePath)..createSync(recursive: true);
+    file.writeAsStringSync(JSON.encode(data));
+  }
+
+  List _buildDataPointList() {
+    List result = [];
+    for (int i = 0; i < _xList.length; i++) {
+      Map data = {
+        'point': [_xList[i], _yList[i]],
+        'value': _valueList[i],
+        'color': _colorList[i]
+      };
+      data.addAll(_dataList[i]);
+      result.add(data);
+    }
+    return result;
+  }
   /// Compute a file path, using the supplied automatic name unless it is
-  /// overridden
-  String _computeFilePath(String autoFileName) {
-    String filePath = _outputFolder;
-    if (_outputFilename == null) {
+  /// overridden. If [dataOutput] is true, then the path is the data files,
+  /// otherwise for image files.
+  String _computeFilePath(String autoFileName, bool dataOutput) {
+    String filePath = dataOutput ? dataOutputFolder : imageOutputFolder;
+    String outputFileName =
+        dataOutput ? dataOutputFileName : imageOutputFileName;
+    if (outputFileName == null) {
       filePath = filePath + autoFileName;
     } else {
-      filePath = filePath + _outputFilename;
+      filePath = filePath + outputFileName;
     }
     return filePath;
   }
@@ -215,9 +278,9 @@ class Visualisation {
       Range newValueRange =
           new Range(double.INFINITY, double.NEGATIVE_INFINITY);
 
-      for (int i = 0; i < _xs.length; i++) {
-        List result =
-            transform(_xs[i], _ys[i], _dataList[i], _xRange, _yRange, _valueRange);
+      for (int i = 0; i < _xList.length; i++) {
+        List result = transform(
+            _xList[i], _yList[i], _valueList[i], _xRange, _yRange, _valueRange);
 
         newXs.add(result[0]);
         newYs.add(result[1]);
@@ -233,8 +296,8 @@ class Visualisation {
         newValueRange.min = math.min(newValueRange.min, result[2]);
         newValueRange.max = math.max(newValueRange.max, result[2]);
       }
-      _xs = newXs;
-      _ys = newYs;
+      _xList = newXs;
+      _yList = newYs;
       _dataList = newDataList;
       _xRange = newXRange;
       _yRange = newYRange;
@@ -243,14 +306,14 @@ class Visualisation {
 
     // Apply the color transform.
     if (_colorTransform != null) {
-      for (int i = 0; i < _xs.length; i++) {
+      for (int i = 0; i < _xList.length; i++) {
         num color = _colorTransform(
-            _xs[i], _ys[i], _dataList[i], _xRange, _yRange, _valueRange);
-        _colors.add(color);
+            _xList[i], _yList[i], _valueList[i], _xRange, _yRange, _valueRange);
+        _colorList.add(color);
       }
     } else {
-      for (int i = 0; i < _xs.length; i++) {
-        _colors.add(Color.fromRgb(0, 0, 0));
+      for (int i = 0; i < _xList.length; i++) {
+        _colorList.add(Color.fromRgb(0, 0, 0));
       }
     }
   }
