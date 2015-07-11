@@ -6,7 +6,7 @@ class Visualisation {
   ColorTransformFunction _colorTransform;
   List<int> xs = [];
   List<int> ys = [];
-  List<num> values = [];
+  List<Map> dataList = [];
   List<int> colors = [];
   Range xRange;
   Range yRange;
@@ -31,14 +31,16 @@ class Visualisation {
     });
   }
 
-  /// Add a data point defined by the [x] and [y] coordinates and its [value].
-  void addData(num x, num y, num value) {
+  /// Add a data point defined by the [x] and [y] coordinates and its [data].
+  /// The [data] map must contain a 'value' entry.
+  void addData(num x, num y, Map data) {
     assert(x != null);
     assert(y != null);
-    assert(value != null);
+    assert(data != null);
+    assert(data['value'] != null);
     xs.add(x);
     ys.add(y);
-    values.add(value);
+    dataList.add(data);
 
     // Adjust the ranges for the data.
     xRange.min = math.min(xRange.min, x);
@@ -47,19 +49,19 @@ class Visualisation {
     yRange.min = math.min(yRange.min, y);
     yRange.max = math.max(yRange.max, y);
 
-    valueRange.min = math.min(valueRange.min, value);
-    valueRange.max = math.max(valueRange.max, value);
+    valueRange.min = math.min(valueRange.min, data['value']);
+    valueRange.max = math.max(valueRange.max, data['value']);
   }
 
   /// Appends the data points defined by the coordinate lists [ix] and [iy] and
   /// the value list [ivalue].
   void addAllDataPoints(
-      Iterable<num> ix, Iterable<num> iy, Iterable<num> ivalue) {
+      Iterable<num> ix, Iterable<num> iy, Iterable<Map> idataList) {
     Iterator x = ix.iterator;
     Iterator y = iy.iterator;
-    Iterator value = ivalue.iterator;
-    while (x.moveNext() && y.moveNext() && value.moveNext()) {
-      addData(x.current, y.current, value.current);
+    Iterator data = idataList.iterator;
+    while (x.moveNext() && y.moveNext() && data.moveNext()) {
+      addData(x.current, y.current, data.current);
     }
   }
 
@@ -199,7 +201,7 @@ class Visualisation {
     for (DataTransformFunction transform in _dataTransforms) {
       List<num> newXs = [];
       List<num> newYs = [];
-      List<num> newValues = [];
+      List<Map> newDataList = [];
       Range newXRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
       Range newYRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
       Range newValueRange =
@@ -207,11 +209,11 @@ class Visualisation {
 
       for (int i = 0; i < xs.length; i++) {
         List result =
-            transform(xs[i], ys[i], values[i], xRange, yRange, valueRange);
+            transform(xs[i], ys[i], dataList[i], xRange, yRange, valueRange);
 
         newXs.add(result[0]);
         newYs.add(result[1]);
-        newValues.add(result[2]);
+        newDataList.add(result[2]);
 
         // Adjust the ranges for the data.
         newXRange.min = math.min(newXRange.min, result[0]);
@@ -225,7 +227,7 @@ class Visualisation {
       }
       xs = newXs;
       ys = newYs;
-      values = newValues;
+      dataList = newDataList;
       xRange = newXRange;
       yRange = newYRange;
       valueRange = newValueRange;
@@ -235,7 +237,7 @@ class Visualisation {
     if (_colorTransform != null) {
       for (int i = 0; i < xs.length; i++) {
         num color = _colorTransform(
-            xs[i], ys[i], values[i], xRange, yRange, valueRange);
+            xs[i], ys[i], dataList[i], xRange, yRange, valueRange);
         colors.add(color);
       }
     } else {
