@@ -10,11 +10,11 @@ export 'package:image/image.dart' show Color;
 part 'src/visualisation.dart';
 part 'src/range.dart';
 
-/// Returns [num x, num y, num value]
+/// Returns [num x, num y, Map value]
 /// TODO(mariana): Explore using a const class instead of a List.
 typedef List DataTransformFunction(
-    int x, int y, num value, Range xRange, Range yRange, Range dataRange);
+    int x, int y, Map data, Range xRange, Range yRange, Range dataRange);
 
 /// Returns the color of the point
 typedef int ColorTransformFunction(
-    int x, int y, num value, Range xRange, Range yRange, Range dataRange);
+    int x, int y, Map data, Range xRange, Range yRange, Range dataRange);
