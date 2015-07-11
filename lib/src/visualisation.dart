@@ -1,5 +1,19 @@
 part of many_points;
 
+logging.Logger _logger = new logging.Logger('Visualisation');
+bool isLoggingInitialized = false;
+
+_initLogging(bool enableLogging) {
+  logging.hierarchicalLoggingEnabled = true;
+  _logger.level = enableLogging ? logging.Level.ALL : logging.Level.OFF;
+  if (!isLoggingInitialized) {
+    _logger.onRecord.listen((logging.LogRecord rec) {
+      print('${rec.level.name}: ${rec.time}: ${rec.message}');
+    });
+  }
+  isLoggingInitialized = true;
+}
+
 class Visualisation {
   String _outputFolder, _outputFilename;
   List<DataTransformFunction> _dataTransforms = [];
@@ -11,8 +25,7 @@ class Visualisation {
   Range _xRange;
   Range _yRange;
   Range _valueRange;
-  bool _transformsApplied;
-  Logger _logger;
+  bool _transformsApplied = false;
 
   Visualisation([String outputFolder = "output/image/", String outputFilename,
       bool enableLogging = true]) {
@@ -21,14 +34,7 @@ class Visualisation {
     _valueRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
     _outputFolder = outputFolder;
     _outputFilename = outputFilename;
-
-    // Initialize logging
-    _logger = new Logger('Visualisation');
-    hierarchicalLoggingEnabled = true;
-    _logger.level = enableLogging ? Level.ALL : Level.OFF;
-    _logger.onRecord.listen((LogRecord rec) {
-      print('${rec.level.name}: ${rec.time}: ${rec.message}');
-    });
+    _initLogging(enableLogging);
   }
 
   /// Add a data point defined by the [x] and [y] coordinates and its [data].
@@ -195,7 +201,9 @@ class Visualisation {
   void _applyTransforms() {
     // Apply the transforms only once. This allows for multiple render calls but
     // a single transforms application phase.
-    if (_transformsApplied == false) return;
+    if (_transformsApplied) {
+      return;
+    }
     _transformsApplied = true;
     // Go through data transforms first and apply them to every point.
     for (DataTransformFunction transform in _dataTransforms) {
