@@ -4,29 +4,29 @@ class Visualisation {
   String _outputFolder, _outputFilename;
   List<DataTransformFunction> _dataTransforms = [];
   ColorTransformFunction _colorTransform;
-  List<int> xs = [];
-  List<int> ys = [];
-  List<Map> dataList = [];
-  List<int> colors = [];
-  Range xRange;
-  Range yRange;
-  Range valueRange;
-  bool transformsApplied;
-  Logger logger;
+  List<int> _xs = [];
+  List<int> _ys = [];
+  List<Map> _dataList = [];
+  List<int> _colors = [];
+  Range _xRange;
+  Range _yRange;
+  Range _valueRange;
+  bool _transformsApplied;
+  Logger _logger;
 
   Visualisation([String outputFolder = "output/image/", String outputFilename,
       bool enableLogging = true]) {
-    xRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
-    yRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
-    valueRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
+    _xRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
+    _yRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
+    _valueRange = new Range(double.INFINITY, double.NEGATIVE_INFINITY);
     _outputFolder = outputFolder;
     _outputFilename = outputFilename;
 
     // Initialize logging
-    logger = new Logger('Visualisation');
+    _logger = new Logger('Visualisation');
     hierarchicalLoggingEnabled = true;
-    logger.level = enableLogging ? Level.ALL : Level.OFF;
-    logger.onRecord.listen((LogRecord rec) {
+    _logger.level = enableLogging ? Level.ALL : Level.OFF;
+    _logger.onRecord.listen((LogRecord rec) {
       print('${rec.level.name}: ${rec.time}: ${rec.message}');
     });
   }
@@ -38,19 +38,19 @@ class Visualisation {
     assert(y != null);
     assert(data != null);
     assert(data['value'] != null);
-    xs.add(x);
-    ys.add(y);
-    dataList.add(data);
+    _xs.add(x);
+    _ys.add(y);
+    _dataList.add(data);
 
     // Adjust the ranges for the data.
-    xRange.min = math.min(xRange.min, x);
-    xRange.max = math.max(xRange.max, x);
+    _xRange.min = math.min(_xRange.min, x);
+    _xRange.max = math.max(_xRange.max, x);
 
-    yRange.min = math.min(yRange.min, y);
-    yRange.max = math.max(yRange.max, y);
+    _yRange.min = math.min(_yRange.min, y);
+    _yRange.max = math.max(_yRange.max, y);
 
-    valueRange.min = math.min(valueRange.min, data['value']);
-    valueRange.max = math.max(valueRange.max, data['value']);
+    _valueRange.min = math.min(_valueRange.min, data['value']);
+    _valueRange.max = math.max(_valueRange.max, data['value']);
   }
 
   /// Appends the data points defined by the coordinate lists [ix] and [iy] and
@@ -88,46 +88,46 @@ class Visualisation {
   void renderSync([num width = -1, num height = -1]) {
     Stopwatch sw = new Stopwatch()..start();
     _applyTransforms();
-    logger.info('Transforms applied. Duration/ms: ${sw.elapsedMilliseconds}');
+    _logger.info('Transforms applied. Duration/ms: ${sw.elapsedMilliseconds}');
     sw.reset();
 
-    int w = (xRange.max - xRange.min).ceil() + 1;
-    int h = (yRange.max - yRange.min).ceil() + 1;
+    int w = (_xRange.max - _xRange.min).ceil() + 1;
+    int h = (_yRange.max - _yRange.min).ceil() + 1;
     Image image = new Image(w, h);
 
-    for (int i = 0; i < xs.length; i++) {
-      image.setPixel(xs[i], ys[i], colors[i]);
+    for (int i = 0; i < _xs.length; i++) {
+      image.setPixel(_xs[i], _ys[i], _colors[i]);
     }
-    logger.info('Pixel values set. Duration/ms: ${sw.elapsedMilliseconds}');
+    _logger.info('Pixel values set. Duration/ms: ${sw.elapsedMilliseconds}');
     sw.reset();
 
     if (width != -1) {
       image = copyResize(image, width, height, NEAREST);
-      logger.info('Image resized. Duration/ms: ${sw.elapsedMilliseconds}');
+      _logger.info('Image resized. Duration/ms: ${sw.elapsedMilliseconds}');
       sw.reset();
     }
 
     String filePath = _computeFilePath("${new DateTime.now()}.png");
     _writeImageSync(filePath, image);
-    logger
+    _logger
         .info('Image written to file. Duration/ms: ${sw.elapsedMilliseconds}');
   }
 
   void render_SCALING_HACK(num width, num height) {
     Stopwatch sw = new Stopwatch()..start();
     _applyTransforms();
-    logger.info('Transforms applied. Duration/ms: ${sw.elapsedMilliseconds}');
+    _logger.info('Transforms applied. Duration/ms: ${sw.elapsedMilliseconds}');
     sw.reset();
 
-    int w = (xRange.max - xRange.min).ceil() + 1;
-    int h = (yRange.max - yRange.min).ceil() + 1;
+    int w = (_xRange.max - _xRange.min).ceil() + 1;
+    int h = (_yRange.max - _yRange.min).ceil() + 1;
     Image image = new Image(width, height);
 
-    for (int i = 0; i < xs.length; i++) {
-      image.setPixel((((xs[i] - xRange.min) / w) * width).floor(),
-          (((ys[i] - yRange.min) / h) * height).floor(), colors[i]);
+    for (int i = 0; i < _xs.length; i++) {
+      image.setPixel((((_xs[i] - _xRange.min) / w) * width).floor(),
+          (((_ys[i] - _yRange.min) / h) * height).floor(), _colors[i]);
     }
-    logger.info('Pixel values set. Duration/ms: ${sw.elapsedMilliseconds}');
+    _logger.info('Pixel values set. Duration/ms: ${sw.elapsedMilliseconds}');
     sw.reset();
 
 //    if (width != -1) {
@@ -136,7 +136,7 @@ class Visualisation {
 
     String filePath = _computeFilePath("${new DateTime.now()}.png");
     _writeImageSync(filePath, image);
-    logger
+    _logger
         .info('Image written to file. Duration/ms: ${sw.elapsedMilliseconds}');
   }
 
@@ -146,28 +146,28 @@ class Visualisation {
     assert(areaY != null);
     Stopwatch sw = new Stopwatch()..start();
     _applyTransforms();
-    logger.info('Transforms applied. Duration/ms: ${sw.elapsedMilliseconds}');
+    _logger.info('Transforms applied. Duration/ms: ${sw.elapsedMilliseconds}');
     sw.reset();
 
     int w = (areaX.max - areaX.min).ceil() + 1;
     int h = (areaY.max - areaY.min).ceil() + 1;
     Image image = new Image(w, h);
-    for (int i = 0; i < xs.length; i++) {
-      if (areaX.min <= xs[i] &&
-          xs[i] <= areaY.max &&
-          areaY.min <= ys[i] &&
-          ys[i] <= areaY.max) {
-        image.setPixel(xs[i], ys[i], colors[i]);
+    for (int i = 0; i < _xs.length; i++) {
+      if (areaX.min <= _xs[i] &&
+          _xs[i] <= areaY.max &&
+          areaY.min <= _ys[i] &&
+          _ys[i] <= areaY.max) {
+        image.setPixel(_xs[i], _ys[i], _colors[i]);
       }
     }
-    logger.info('Pixel values set. Duration/ms: ${sw.elapsedMilliseconds}');
+    _logger.info('Pixel values set. Duration/ms: ${sw.elapsedMilliseconds}');
     sw.reset();
 
     String autoFileName = "${new DateTime.now()}"
         "_${areaX.min},${areaX.max}_${areaY.min},${areaY.max}.png";
     String filePath = _computeFilePath(autoFileName);
     _writeImageSync(filePath, image);
-    logger
+    _logger
         .info('Image written to file. Duration/ms: ${sw.elapsedMilliseconds}');
   }
 
@@ -195,8 +195,8 @@ class Visualisation {
   void _applyTransforms() {
     // Apply the transforms only once. This allows for multiple render calls but
     // a single transforms application phase.
-    if (transformsApplied == false) return;
-    transformsApplied = true;
+    if (_transformsApplied == false) return;
+    _transformsApplied = true;
     // Go through data transforms first and apply them to every point.
     for (DataTransformFunction transform in _dataTransforms) {
       List<num> newXs = [];
@@ -207,9 +207,9 @@ class Visualisation {
       Range newValueRange =
           new Range(double.INFINITY, double.NEGATIVE_INFINITY);
 
-      for (int i = 0; i < xs.length; i++) {
+      for (int i = 0; i < _xs.length; i++) {
         List result =
-            transform(xs[i], ys[i], dataList[i], xRange, yRange, valueRange);
+            transform(_xs[i], _ys[i], _dataList[i], _xRange, _yRange, _valueRange);
 
         newXs.add(result[0]);
         newYs.add(result[1]);
@@ -225,24 +225,24 @@ class Visualisation {
         newValueRange.min = math.min(newValueRange.min, result[2]);
         newValueRange.max = math.max(newValueRange.max, result[2]);
       }
-      xs = newXs;
-      ys = newYs;
-      dataList = newDataList;
-      xRange = newXRange;
-      yRange = newYRange;
-      valueRange = newValueRange;
+      _xs = newXs;
+      _ys = newYs;
+      _dataList = newDataList;
+      _xRange = newXRange;
+      _yRange = newYRange;
+      _valueRange = newValueRange;
     }
 
     // Apply the color transform.
     if (_colorTransform != null) {
-      for (int i = 0; i < xs.length; i++) {
+      for (int i = 0; i < _xs.length; i++) {
         num color = _colorTransform(
-            xs[i], ys[i], dataList[i], xRange, yRange, valueRange);
-        colors.add(color);
+            _xs[i], _ys[i], _dataList[i], _xRange, _yRange, _valueRange);
+        _colors.add(color);
       }
     } else {
-      for (int i = 0; i < xs.length; i++) {
-        colors.add(Color.fromRgb(0, 0, 0));
+      for (int i = 0; i < _xs.length; i++) {
+        _colors.add(Color.fromRgb(0, 0, 0));
       }
     }
   }
