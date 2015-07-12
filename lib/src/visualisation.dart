@@ -22,7 +22,7 @@ class Visualisation {
   String imageOutputFileName;
 
   /// The output folder path for the resulting data dump in JSON format.
-  String dataOutputFolder = "output/data/";
+  String dataOutputFolder = "output/freckl/";
 
   /// The output JSON data file name.
   String dataOutputFileName;

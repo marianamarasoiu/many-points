@@ -1,8 +1,8 @@
-library many_points.test;
+library many_points.example;
 
 import 'dart:math';
 
-import '../lib/many_points.dart';
+import 'package:many_points/many_points.dart';
 
 
 void main() {
