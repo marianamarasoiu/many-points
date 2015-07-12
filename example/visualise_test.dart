@@ -1,6 +1,6 @@
-library many_points.test;
+library many_points.example;
 
-import '../lib/many_points.dart';
+import 'package:many_points/many_points.dart';
 
 void main() {
   exampleRenderSync();
@@ -10,14 +10,14 @@ void main() {
 void exampleRenderSync() {
   Visualisation chart = new Visualisation();
 
-  chart.addData(0, 0, {'value': 12});
-  chart.addData(20, 20, {'value': 72});
-  chart.addData(0, 20, {'value': 53});
-  chart.addData(20, 0, {'value': 30});
+  chart.addData(0, 0, 12, {});
+  chart.addData(20, 20, 72, {});
+  chart.addData(0, 20, 53, {});
+  chart.addData(20, 0, 30, {});
 
-  ColorTransformFunction fn = (int x, int y, Map data, Range xRange,
-                               Range yRange, Range dataRange) {
-    return Color.fromRgb(data['value'] * 3, 0, 0);
+  ColorTransformFunction fn = (int x, int y, num value, Range xRange,
+      Range yRange, Range dataRange) {
+    return Color.fromRgb(value * 3, 0, 0);
   };
 
   chart.setColorTransform(fn);
@@ -27,15 +27,15 @@ void exampleRenderSync() {
 void exampleRenderAreaSync() {
   Visualisation chart = new Visualisation();
 
-  chart.addData(0, 0, {'value': 12});
-  chart.addData(20, 20, {'value': 72});
-  chart.addData(0, 20, {'value': 53});
-  chart.addData(20, 0, {'value': 30});
-  chart.addData(10, 10, {'value': 41});
+  chart.addData(0, 0, 12, {});
+  chart.addData(20, 20, 72, {});
+  chart.addData(0, 20, 53, {});
+  chart.addData(20, 0, 30, {});
+  chart.addData(10, 10, 41, {});
 
-  ColorTransformFunction fn = (int x, int y, Map data, Range xRange,
-                               Range yRange, Range dataRange) {
-    return Color.fromRgb(data['value'] * 3, 0, 0);
+  ColorTransformFunction fn = (int x, int y, num value, Range xRange,
+      Range yRange, Range dataRange) {
+    return Color.fromRgb(value * 3, 0, 0);
   };
 
   chart.setColorTransform(fn);
