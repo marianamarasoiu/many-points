@@ -133,7 +133,7 @@ class Visualisation {
     sw.reset();
 
     // Writing the data dump.
-    String dataFilePath = _computeFilePath("${new DateTime.now()}.json", true);
+    String dataFilePath = _computeFilePath("${new DateTime.now()}.freckl", true);
     List data = _buildDataPointList();
     _writeDataSync(dataFilePath, data);
     _logger
@@ -169,7 +169,7 @@ class Visualisation {
     sw.reset();
 
     // Writing the data dump.
-    String dataFilePath = _computeFilePath("${new DateTime.now()}.json", true);
+    String dataFilePath = _computeFilePath("${new DateTime.now()}.freckl", true);
     List data = _buildDataPointList();
     _writeDataSync(dataFilePath, data);
     _logger
@@ -211,7 +211,7 @@ class Visualisation {
     sw.reset();
 
     // Writing the data dump.
-    String dataFileName = autoFileName + '.json';
+    String dataFileName = autoFileName + '.freckl';
     String dataFilePath = _computeFilePath(dataFileName, true);
     List data = _buildDataPointList();
     _writeDataSync(dataFilePath, data);
