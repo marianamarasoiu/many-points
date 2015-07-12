@@ -114,7 +114,7 @@ class Visualisation {
     Image image = new Image(w, h);
 
     for (int i = 0; i < _xList.length; i++) {
-      image.setPixel(_xList[i], _yList[i], _colorList[i]);
+      image.setPixel(_xList[i] - _xRange.min, _yList[i] - _yRange.min, _colorList[i]);
     }
     _logger.info('Pixel values set. Duration/ms: ${sw.elapsedMilliseconds}');
     sw.reset();
